@@ -1,10 +1,10 @@
 import type { NextConfig } from "next";
 
 const nextConfig: NextConfig = {
-  // Transpile Three.js packages
+  output: "export",
+  basePath: "/portfolio-evanilson",
+  images: { unoptimized: true },
   transpilePackages: ['three', '@react-three/fiber', '@react-three/drei'],
-  
-  // Turbopack config (Next.js 16 default bundler)
   turbopack: {},
 };
 
