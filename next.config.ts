@@ -1,7 +1,11 @@
 import type { NextConfig } from "next";
 
 const nextConfig: NextConfig = {
-  /* config options here */
+  // Transpile Three.js packages
+  transpilePackages: ['three', '@react-three/fiber', '@react-three/drei'],
+  
+  // Turbopack config (Next.js 16 default bundler)
+  turbopack: {},
 };
 
 export default nextConfig;
