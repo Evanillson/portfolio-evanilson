@@ -1,8 +1,8 @@
 'use client';
 
 import { motion, AnimatePresence } from 'framer-motion';
-import { useEffect } from 'react';
-import { X, Download, ExternalLink } from 'lucide-react';
+import { useEffect, useState } from 'react';
+import { X, Download, ExternalLink, FileX2, Loader2 } from 'lucide-react';
 
 interface CertificateViewerModalProps {
   isOpen: boolean;
@@ -15,6 +15,8 @@ interface CertificateViewerModalProps {
 const isProd = process.env.NODE_ENV === 'production';
 const basePath = isProd ? '/portfolio-evanilson' : '';
 
+type ViewerStatus = 'loading' | 'ok' | 'missing';
+
 export default function CertificateViewerModal({
   isOpen,
   onClose,
@@ -24,6 +26,35 @@ export default function CertificateViewerModal({
 }: CertificateViewerModalProps) {
   // Resolve absolute URL respecting basePath for GH Pages
   const resolvedUrl = pdfUrl.startsWith('http') ? pdfUrl : `${basePath}${pdfUrl}`;
+  const [status, setStatus] = useState<ViewerStatus>('loading');
+
+  // Verify the PDF actually exists before rendering the iframe — avoids
+  // showing the site's own 404 page (which renders the full layout) inside the frame.
+  useEffect(() => {
+    if (!isOpen) return;
+    let cancelled = false;
+    setStatus('loading');
+
+    (async () => {
+      try {
+        const res = await fetch(resolvedUrl, { method: 'GET', cache: 'no-store' });
+        const contentType = res.headers.get('content-type') ?? '';
+        const isPdf = contentType.toLowerCase().includes('pdf');
+        if (cancelled) return;
+        if (res.ok && isPdf) {
+          setStatus('ok');
+        } else {
+          setStatus('missing');
+        }
+      } catch {
+        if (!cancelled) setStatus('missing');
+      }
+    })();
+
+    return () => {
+      cancelled = true;
+    };
+  }, [isOpen, resolvedUrl]);
 
   useEffect(() => {
     if (!isOpen) return;
@@ -37,6 +68,8 @@ export default function CertificateViewerModal({
       document.body.style.overflow = '';
     };
   }, [isOpen, onClose]);
+
+  const hasPdf = status === 'ok';
 
   return (
     <AnimatePresence>
@@ -89,36 +122,40 @@ export default function CertificateViewerModal({
               </div>
 
               <div className="flex items-center gap-2 shrink-0">
-                <a
-                  href={resolvedUrl}
-                  target="_blank"
-                  rel="noopener noreferrer"
-                  className="inline-flex items-center gap-1.5 px-3 py-1.5 rounded-lg text-xs font-semibold transition-all duration-300 hover:scale-[1.02]"
-                  style={{
-                    border: '1px solid var(--card-border)',
-                    color: 'var(--foreground)',
-                  }}
-                  aria-label="Abrir em nova aba"
-                >
-                  <ExternalLink size={12} />
-                  <span className="hidden sm:inline">Nova aba</span>
-                </a>
-                <a
-                  href={resolvedUrl}
-                  download
-                  className="inline-flex items-center gap-1.5 px-3 py-1.5 rounded-lg text-xs font-semibold transition-all duration-300 hover:scale-[1.02]"
-                  style={{
-                    background: 'var(--accent-primary)',
-                    color: 'var(--background-secondary)',
-                  }}
-                  aria-label="Baixar PDF"
-                >
-                  <Download size={12} />
-                  <span className="hidden sm:inline">Baixar</span>
-                </a>
+                {hasPdf && (
+                  <>
+                    <a
+                      href={resolvedUrl}
+                      target="_blank"
+                      rel="noopener noreferrer"
+                      className="inline-flex items-center gap-1.5 px-3 py-1.5 rounded-lg text-xs font-semibold transition-all duration-300 hover:scale-[1.02]"
+                      style={{
+                        border: '1px solid var(--card-border)',
+                        color: 'var(--foreground)',
+                      }}
+                      aria-label="Abrir em nova aba"
+                    >
+                      <ExternalLink size={12} />
+                      <span className="hidden sm:inline">Nova aba</span>
+                    </a>
+                    <a
+                      href={resolvedUrl}
+                      download
+                      className="inline-flex items-center gap-1.5 px-3 py-1.5 rounded-lg text-xs font-semibold transition-all duration-300 hover:scale-[1.02]"
+                      style={{
+                        background: 'var(--accent-primary)',
+                        color: 'var(--background-secondary)',
+                      }}
+                      aria-label="Baixar PDF"
+                    >
+                      <Download size={12} />
+                      <span className="hidden sm:inline">Baixar</span>
+                    </a>
+                  </>
+                )}
                 <button
                   onClick={onClose}
-                  className="p-2 rounded-lg transition-all duration-300 hover:scale-[1.05]"
+                  className="p-2 rounded-lg transition-all duration-300 hover:scale-[1.05] cursor-pointer"
                   style={{
                     border: '1px solid var(--card-border)',
                     color: 'var(--foreground)',
@@ -130,14 +167,81 @@ export default function CertificateViewerModal({
               </div>
             </div>
 
-            {/* PDF viewer */}
-            <div className="flex-1 overflow-hidden" style={{ background: 'var(--background-secondary)' }}>
-              <iframe
-                src={resolvedUrl}
-                title={title}
-                className="w-full h-full"
-                style={{ border: 'none' }}
-              />
+            {/* Body */}
+            <div
+              className="flex-1 overflow-hidden"
+              style={{ background: 'var(--background-secondary)' }}
+            >
+              {status === 'loading' && (
+                <div className="w-full h-full flex flex-col items-center justify-center gap-3">
+                  <Loader2
+                    size={28}
+                    className="animate-spin"
+                    style={{ color: 'var(--accent-primary)' }}
+                  />
+                  <p className="text-xs" style={{ color: 'var(--foreground-muted)' }}>
+                    Carregando certificado…
+                  </p>
+                </div>
+              )}
+
+              {status === 'ok' && (
+                <iframe
+                  src={resolvedUrl}
+                  title={title}
+                  className="w-full h-full"
+                  style={{ border: 'none' }}
+                />
+              )}
+
+              {status === 'missing' && (
+                <div className="w-full h-full flex items-center justify-center p-6 sm:p-10">
+                  <div
+                    className="max-w-md w-full text-center rounded-2xl p-8 sm:p-10"
+                    style={{
+                      background: 'var(--card-bg)',
+                      border: '1px solid var(--card-border)',
+                      backdropFilter: 'blur(var(--glass-blur))',
+                    }}
+                  >
+                    <div
+                      className="w-16 h-16 rounded-2xl flex items-center justify-center mx-auto mb-5"
+                      style={{
+                        background: 'rgba(245, 158, 11, 0.12)',
+                        border: '1px solid rgba(245, 158, 11, 0.35)',
+                        color: '#F59E0B',
+                      }}
+                    >
+                      <FileX2 size={28} />
+                    </div>
+                    <h4
+                      className="text-lg sm:text-xl font-bold tracking-tight mb-2"
+                      style={{ color: 'var(--foreground)' }}
+                    >
+                      Documento não encontrado
+                    </h4>
+                    <p
+                      className="text-sm leading-relaxed mb-6"
+                      style={{ color: 'var(--foreground-muted)' }}
+                    >
+                      O certificado deste curso ainda não está vinculado ao portfólio.
+                      Em caso de necessidade, posso enviá-lo diretamente sob solicitação.
+                    </p>
+                    <button
+                      onClick={onClose}
+                      className="inline-flex items-center justify-center gap-2 px-6 py-2.5 rounded-lg text-sm font-semibold transition-all duration-300 hover:scale-[1.02] cursor-pointer"
+                      style={{
+                        background: 'var(--accent-primary)',
+                        color: 'var(--background-secondary)',
+                      }}
+                      aria-label="Fechar"
+                      autoFocus
+                    >
+                      OK
+                    </button>
+                  </div>
+                </div>
+              )}
             </div>
           </motion.div>
         </motion.div>
