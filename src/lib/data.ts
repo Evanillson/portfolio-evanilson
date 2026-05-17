@@ -3,6 +3,71 @@
    ============================================ */
 
 // ---- PROJECTS ----
+export type ProjectStatus = 'production' | 'beta' | 'mvp' | 'concept' | 'archived';
+
+export interface ProjectLink {
+  label: string;
+  href: string;
+  kind: 'live' | 'github' | 'docs' | 'dashboard' | 'case-study';
+}
+
+export interface ProjectOverview {
+  objective: string;
+  problem: string;
+  audience: string;
+  businessContext: string;
+  differentials: string[];
+  strategy: string;
+}
+
+export interface ProjectArchitecture {
+  frontend: string;
+  backend: string;
+  apis: string;
+  database: string;
+  flow: string;
+  integrations: string[];
+  auth: string;
+  hosting: string;
+  infra: string;
+  scalability: string;
+}
+
+export interface ProjectDataEngineering {
+  ingestion: string;
+  transformations: string;
+  processing: string;
+  consumption: string;
+  schema: string;
+  pipeline: string;
+  performance: string;
+  strategies: string[];
+}
+
+export interface ProjectStack {
+  frontend?: string[];
+  backend?: string[];
+  database?: string[];
+  infrastructure?: string[];
+  libraries?: string[];
+  tools?: string[];
+  analytics?: string[];
+  deploy?: string[];
+}
+
+export interface ProjectGalleryItem {
+  src: string;
+  caption: string;
+  alt: string;
+}
+
+export interface ProjectChallenge {
+  title: string;
+  problem: string;
+  decision: string;
+  outcome: string;
+}
+
 export interface Project {
   slug: string;
   title: string;
@@ -22,6 +87,19 @@ export interface Project {
     flowchart: string;
     erDiagram: string;
   };
+  // ----- Case-study fields (optional, populated progressively) -----
+  category?: string;
+  status?: ProjectStatus;
+  executiveSummary?: string;
+  links?: ProjectLink[];
+  overview?: ProjectOverview;
+  architecture?: ProjectArchitecture;
+  dataEngineering?: ProjectDataEngineering;
+  stack?: ProjectStack;
+  gallery?: ProjectGalleryItem[];
+  challenges?: ProjectChallenge[];
+  futureRoadmap?: string[];
+  metrics?: { label: string; value: string; hint?: string }[];
 }
 
 export const projects: Project[] = [
@@ -124,6 +202,151 @@ export const projects: Project[] = [
     fato_simulacao ||--o{ dim_cliente : "cliente"
     fato_custos ||--o{ dim_rota : "rota"`,
     },
+    // ---- Case-study (mock completo) ----
+    category: 'Data & Pricing Intelligence',
+    status: 'production',
+    executiveSummary:
+      'Plataforma cost-plus que centraliza simulação de fretes rodoviários em tempo real, reduzindo o ciclo de cotação de horas para minutos e padronizando margens por filial, rota e tipo de veículo.',
+    links: [
+      { label: 'Acessar dashboard', href: '#', kind: 'dashboard' },
+      { label: 'GitHub', href: 'https://github.com/Evanillson', kind: 'github' },
+      { label: 'Documentação técnica', href: '#', kind: 'docs' },
+    ],
+    metrics: [
+      { label: 'Redução do ciclo de cotação', value: '−87%', hint: 'De 6h para ~45min' },
+      { label: 'Filiais integradas', value: '23', hint: 'Cobertura nacional' },
+      { label: 'Acurácia de margem', value: '99.4%', hint: 'vs. fechamento contábil' },
+      { label: 'Linhas processadas/dia', value: '1.2M', hint: 'Pipeline incremental' },
+    ],
+    overview: {
+      objective:
+        'Padronizar a precificação rodoviária multi-filial em uma única camada analítica, eliminando planilhas paralelas e dando ao time comercial autonomia para simular cenários complexos com governança.',
+      problem:
+        'Cada filial mantinha sua própria planilha de cotação com regras de margem distintas, sem rastreabilidade. O fechamento mensal apresentava divergências entre o preço cotado e o custo real, comprometendo a margem bruta.',
+      audience:
+        'Time comercial regional, controladoria, diretoria de operações logísticas e parceiros que consomem o motor de pricing via integração.',
+      businessContext:
+        'Operação rodoviária com mais de 20 filiais, alta volatilidade de combustível e exigência de SLA comercial de 2h. O negócio precisava de uma única fonte de verdade para preço — auditável e versionada.',
+      differentials: [
+        'Modelo cost-plus parametrizável por filial, modal e cliente',
+        'Versionamento de tabelas de preço com snapshot diário',
+        'DAX context transition para simulação em tempo real',
+        'Camada de governança com Row-Level Security por região',
+        'Histórico completo de simulações com replay analítico',
+      ],
+      strategy:
+        'Adoção de arquitetura medallion com SQL Server como warehouse central, Python para ingestão das fontes não estruturadas e Power BI Premium como camada semântica. Toda regra de negócio foi versionada em DAX/SQL e documentada como ADRs.',
+    },
+    architecture: {
+      frontend:
+        'Power BI Premium como front-end analítico embutido em um wrapper Next.js para single sign-on corporativo. Dashboards parametrizados por bookmarks dinâmicos e drill-through por rota.',
+      backend:
+        'Camada de serviços em FastAPI (Python 3.11) expondo o motor de pricing como API REST, com cache em Redis para parâmetros estáveis (tabelas tributárias, dim_rota).',
+      apis:
+        'Endpoints REST: POST /simulate, GET /history, GET /margins. Documentação OpenAPI gerada automaticamente. Autenticação via JWT emitido pelo Azure AD.',
+      database:
+        'SQL Server (warehouse), PostgreSQL (catálogo de regras de negócio versionadas) e Redis (cache de hot-path). Particionamento por data_simulacao na fato principal.',
+      flow:
+        'Cliente → API Gateway → FastAPI → Motor de pricing (DAX-as-code) → Persistência da simulação → Evento Kafka → Replicação no DW → Atualização do modelo semântico.',
+      integrations: [
+        'ERP Local (TOTVS Protheus) via JDBC',
+        'Tabela ANP de combustíveis (web scraping diário)',
+        'Receita Federal — alíquotas tributárias',
+        'Azure AD — autenticação corporativa',
+        'Slack — alertas de margem fora do range',
+      ],
+      auth:
+        'SSO via Azure AD (OAuth 2.0 / OIDC). RBAC com três papéis: viewer, simulator e governance. Row-Level Security aplicado tanto na API quanto no Power BI.',
+      hosting: 'Azure App Service (API), Azure SQL (warehouse), Power BI Premium Capacity (P1).',
+      infra:
+        'IaC com Terraform, pipelines no GitHub Actions, observabilidade com Application Insights e dashboards de saúde no Grafana.',
+      scalability:
+        'API stateless com auto-scaling horizontal (3–12 instâncias). Warehouse escalado verticalmente até 16 vCores. Cache Redis com TTL adaptativo reduz 78% das chamadas ao SQL em horários de pico.',
+    },
+    dataEngineering: {
+      ingestion:
+        'Ingestão híbrida: pull diário do ERP via stored procedures + push real-time das filiais via API. Arquivos não-estruturados (planilhas legadas) parseados com pandas + openpyxl em janelas de lote.',
+      transformations:
+        'Camadas Bronze → Silver → Gold no SQL Server. Bronze guarda o payload bruto, Silver aplica deduplicação e tipagem, Gold materializa fatos e dimensões otimizados para o modelo semântico.',
+      processing:
+        'Orquestração com Apache Airflow (DAGs idempotentes), com testes de qualidade Great Expectations entre camadas e alerting automático em caso de drift.',
+      consumption:
+        'Power BI Premium consome a camada Gold via Import Mode com refresh incremental por partição mensal. APIs REST consomem a mesma camada Gold com leitura otimizada.',
+      schema:
+        'Star Schema clássico com 2 tabelas fato (fato_simulacao, fato_custos) e 4 dimensões (rota, veículo, cliente, tempo). Surrogate keys em todas as dimensões.',
+      pipeline:
+        'Ingestão (00:30) → Validação Great Expectations (00:50) → Transformação Silver (01:10) → Materialização Gold (01:35) → Refresh Power BI (02:00) → Health-check (02:15).',
+      performance:
+        'Pipeline diário completo em ~95 minutos para 1.2M linhas. Refresh incremental do modelo semântico em 4 minutos. Latência p95 da API de simulação: 180ms.',
+      strategies: [
+        'Particionamento por data_simulacao (mensal)',
+        'Índices columnstore na fato_simulacao',
+        'Aggregations no Power BI para drill-through rápido',
+        'Cache Redis para parâmetros estáveis',
+        'Refresh incremental no Power BI Premium',
+      ],
+    },
+    stack: {
+      frontend: ['Next.js 16', 'TailwindCSS', 'Framer Motion', 'Power BI Embedded'],
+      backend: ['Python 3.11', 'FastAPI', 'Pydantic', 'SQLAlchemy'],
+      database: ['SQL Server 2022', 'PostgreSQL 16', 'Redis 7'],
+      infrastructure: ['Azure App Service', 'Azure SQL', 'Power BI Premium', 'Terraform'],
+      libraries: ['pandas', 'openpyxl', 'Great Expectations', 'pytest'],
+      tools: ['Power Query M', 'DAX Studio', 'Tabular Editor', 'Apache Airflow'],
+      analytics: ['Power BI', 'DAX Avançado', 'Application Insights'],
+      deploy: ['GitHub Actions', 'Docker', 'Azure Pipelines'],
+    },
+    gallery: [
+      {
+        src: '/dashboard_placeholder.png',
+        alt: 'Visão geral do dashboard de pricing',
+        caption: 'Visão executiva — margem por filial e modal',
+      },
+      {
+        src: '/dashboard_placeholder.png',
+        alt: 'Simulador de cenários',
+        caption: 'Simulador interativo de cenários cost-plus',
+      },
+      {
+        src: '/dashboard_placeholder.png',
+        alt: 'Diagrama de arquitetura',
+        caption: 'Drill-through por rota e tipo de veículo',
+      },
+    ],
+    challenges: [
+      {
+        title: 'Reconciliação multi-filial',
+        problem:
+          'Cada filial usava nomenclaturas diferentes para rota, veículo e cliente, gerando duplicidades no DW.',
+        decision:
+          'Implementação de uma dimensão mestre centralizada com matching fuzzy (rapidfuzz) e revisão humana via interface de governança.',
+        outcome:
+          'Redução de 73% das duplicidades no primeiro mês. Hoje >99% dos registros caem em match determinístico.',
+      },
+      {
+        title: 'Latência da API em horários de pico',
+        problem:
+          'Simulações concorrentes saturavam o pool de conexões do SQL Server, levando a p95 acima de 1.5s.',
+        decision:
+          'Introdução de cache Redis para parâmetros estáveis e migração das queries hot-path para stored procedures pré-compiladas.',
+        outcome: 'p95 caiu para 180ms, com −78% de chamadas ao SQL no horário comercial.',
+      },
+      {
+        title: 'Governança de regras de margem',
+        problem:
+          'Mudanças em regras de margem eram aplicadas direto no DAX sem rastreabilidade.',
+        decision:
+          'Migração das regras para um catálogo versionado em PostgreSQL com ADRs (Architecture Decision Records) obrigatórios.',
+        outcome:
+          'Auditoria de mudanças passou de "impossível" para 100% rastreável, com rollback em <5min.',
+      },
+    ],
+    futureRoadmap: [
+      'Motor de pricing dinâmico baseado em ML (XGBoost) para sugestão de margem',
+      'API pública para parceiros com rate limiting por contrato',
+      'Versionamento semântico das tabelas de preço (semver para regras)',
+      'Migração para Lakehouse (Delta Lake) com unificação de batch e streaming',
+    ],
   },
   {
     slug: 'analise-bids-logisticos',
@@ -206,6 +429,10 @@ export const projects: Project[] = [
     fato_bid ||--o{ dim_rota : "rota"
     fato_bid ||--o{ dim_concorrente : "concorrente"`,
     },
+    category: 'Competitive Intelligence',
+    status: 'beta',
+    executiveSummary:
+      'Plataforma de inteligência competitiva para licitações logísticas, combinando histórico interno e sinal de mercado para estimar faixas de preço e probabilidade de vitória.',
   },
   {
     slug: 'governanca-fluxo-gbs',
@@ -281,6 +508,10 @@ export const projects: Project[] = [
     fato_ticket ||--o{ dim_area : "área"
     fato_ticket ||--o{ dim_prioridade : "prioridade"`,
     },
+    category: 'Operations Analytics',
+    status: 'production',
+    executiveSummary:
+      'Painel executivo de governança para Global Business Services consolidando SLAs, aging e cargas de trabalho em tempo quase real via arquitetura Lakehouse.',
   },
 ];
 
