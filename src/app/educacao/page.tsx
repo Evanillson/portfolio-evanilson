@@ -20,7 +20,10 @@ import {
   Star,
   Clock,
   Calendar,
+  Eye,
+  Loader2,
 } from 'lucide-react';
+import CertificateViewerModal from '@/components/ui/CertificateViewerModal';
 
 const EASE: [number, number, number, number] = [0.33, 1, 0.68, 1];
 
@@ -167,8 +170,12 @@ function AcademicDetailCard({ cert, index }: { cert: Certificate; index: number 
   const ref = useRef(null);
   const isInView = useInView(ref, { once: true, margin: '-30px' });
   const [activeTab, setActiveTab] = useState<TabKey>('resumo');
+  const [isViewerOpen, setIsViewerOpen] = useState(false);
   const availableTabs = getAvailableTabs(cert);
   const isMBA = cert.type === 'mba';
+  const isCompleted = cert.status === 'Concluído';
+  const statusColor = isCompleted ? '#22C55E' : '#F59E0B';
+  const StatusIcon = isCompleted ? CheckCircle2 : Loader2;
 
   return (
     <motion.div
@@ -236,11 +243,12 @@ function AcademicDetailCard({ cert, index }: { cert: Certificate; index: number 
               <span
                 className="inline-flex items-center gap-1.5 px-2 py-0.5 rounded-full font-medium"
                 style={{
-                  border: '1px solid var(--card-border)',
-                  color: '#22C55E',
+                  border: `1px solid ${statusColor}40`,
+                  background: `${statusColor}15`,
+                  color: statusColor,
                 }}
               >
-                <CheckCircle2 size={12} />
+                <StatusIcon size={12} className={isCompleted ? '' : 'animate-spin'} />
                 {cert.status}
               </span>
             )}
@@ -295,29 +303,65 @@ function AcademicDetailCard({ cert, index }: { cert: Certificate; index: number 
         </AnimatePresence>
       </div>
 
-      {/* Footer — download */}
-      {cert.pdfUrl && (
+      {/* Footer — view + download */}
+      {cert.pdfUrl ? (
         <div
-          className="px-6 sm:px-8 py-4 flex items-center justify-between"
+          className="px-6 sm:px-8 py-4 flex flex-col sm:flex-row sm:items-center sm:justify-between gap-3"
           style={{ borderTop: '1px solid var(--divider)' }}
         >
           <span className="text-xs" style={{ color: 'var(--foreground-muted)' }}>
-            Certificado disponível para download
+            Certificado disponível para visualização e download
           </span>
-          <a
-            href={cert.pdfUrl}
-            target="_blank"
-            rel="noopener noreferrer"
-            className="inline-flex items-center gap-2 px-4 py-2 rounded-lg text-xs font-semibold transition-all duration-300 hover:scale-[1.02]"
-            style={{
-              background: 'var(--accent-primary)',
-              color: 'var(--background-secondary)',
-            }}
-          >
-            <Download size={12} />
-            Baixar PDF
-          </a>
+          <div className="flex items-center gap-2">
+            <button
+              onClick={() => setIsViewerOpen(true)}
+              className="inline-flex items-center gap-2 px-4 py-2 rounded-lg text-xs font-semibold transition-all duration-300 hover:scale-[1.02] cursor-pointer"
+              style={{
+                border: '1px solid var(--card-border)',
+                color: 'var(--foreground)',
+                background: 'transparent',
+              }}
+              aria-label={`Visualizar certificado de ${cert.title}`}
+            >
+              <Eye size={12} />
+              Visualizar
+            </button>
+            <a
+              href={cert.pdfUrl}
+              download
+              className="inline-flex items-center gap-2 px-4 py-2 rounded-lg text-xs font-semibold transition-all duration-300 hover:scale-[1.02]"
+              style={{
+                background: 'var(--accent-primary)',
+                color: 'var(--background-secondary)',
+              }}
+              aria-label={`Baixar certificado de ${cert.title}`}
+            >
+              <Download size={12} />
+              Baixar PDF
+            </a>
+          </div>
         </div>
+      ) : (
+        !isCompleted && (
+          <div
+            className="px-6 sm:px-8 py-4 flex items-center justify-between"
+            style={{ borderTop: '1px solid var(--divider)' }}
+          >
+            <span className="text-xs italic" style={{ color: 'var(--foreground-muted)' }}>
+              Certificado será disponibilizado após a conclusão do programa.
+            </span>
+          </div>
+        )
+      )}
+
+      {cert.pdfUrl && (
+        <CertificateViewerModal
+          isOpen={isViewerOpen}
+          onClose={() => setIsViewerOpen(false)}
+          pdfUrl={cert.pdfUrl}
+          title={cert.title}
+          institution={cert.institution}
+        />
       )}
     </motion.div>
   );
@@ -564,6 +608,7 @@ function TabTecnologias({ cert }: { cert: Certificate }) {
 function CertificationCard({ cert, index }: { cert: Certificate; index: number }) {
   const ref = useRef(null);
   const isInView = useInView(ref, { once: true, margin: '-30px' });
+  const [isViewerOpen, setIsViewerOpen] = useState(false);
 
   return (
     <motion.div
@@ -571,7 +616,7 @@ function CertificationCard({ cert, index }: { cert: Certificate; index: number }
       initial={{ opacity: 0, y: 25 }}
       animate={isInView ? { opacity: 1, y: 0 } : {}}
       transition={{ duration: 0.5, delay: index * 0.08, ease: EASE }}
-      className="group rounded-2xl p-6 transition-all duration-500 hover:shadow-lg"
+      className="group relative rounded-2xl p-6 transition-all duration-500 hover:shadow-lg"
       style={{
         background: 'var(--card-bg)',
         backdropFilter: 'blur(var(--glass-blur))',
@@ -608,16 +653,28 @@ function CertificationCard({ cert, index }: { cert: Certificate; index: number }
       </p>
 
       {cert.pdfUrl && (
-        <a
-          href={cert.pdfUrl}
-          target="_blank"
-          rel="noopener noreferrer"
-          className="inline-flex items-center gap-1.5 text-xs font-semibold transition-colors duration-300"
-          style={{ color: 'var(--accent-primary)' }}
-        >
-          <Download size={12} />
-          Baixar Certificado
-        </a>
+        <div className="flex items-center gap-3 relative z-10">
+          <button
+            onClick={() => setIsViewerOpen(true)}
+            className="inline-flex items-center gap-1.5 text-xs font-semibold transition-colors duration-300 cursor-pointer"
+            style={{ color: 'var(--accent-primary)' }}
+            aria-label={`Visualizar ${cert.title}`}
+          >
+            <Eye size={12} />
+            Visualizar
+          </button>
+          <span className="text-xs" style={{ color: 'var(--foreground-muted)' }}>•</span>
+          <a
+            href={cert.pdfUrl}
+            download
+            className="inline-flex items-center gap-1.5 text-xs font-semibold transition-colors duration-300"
+            style={{ color: 'var(--foreground-muted)' }}
+            aria-label={`Baixar ${cert.title}`}
+          >
+            <Download size={12} />
+            Baixar
+          </a>
+        </div>
       )}
 
       {/* Hover glow */}
@@ -628,6 +685,16 @@ function CertificationCard({ cert, index }: { cert: Certificate; index: number }
           boxShadow: 'var(--shadow-glow)',
         }}
       />
+
+      {cert.pdfUrl && (
+        <CertificateViewerModal
+          isOpen={isViewerOpen}
+          onClose={() => setIsViewerOpen(false)}
+          pdfUrl={cert.pdfUrl}
+          title={cert.title}
+          institution={cert.institution}
+        />
+      )}
     </motion.div>
   );
 }

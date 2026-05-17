@@ -27,7 +27,20 @@ export default function Navbar() {
   const toggleTheme = () => setTheme(theme === 'dark' ? 'light' : 'dark');
 
   const handleNavClick = (e: React.MouseEvent, href: string) => {
-    // If it's a hash link on the same page (home), scroll to it
+    // "Início" → if already on home, smooth scroll to top; otherwise navigate then scroll
+    if (href === '/') {
+      if (pathname === '/') {
+        e.preventDefault();
+        window.scrollTo({ top: 0, behavior: 'smooth' });
+      } else {
+        // Let Next.js navigate; ensure top after navigation
+        setTimeout(() => window.scrollTo({ top: 0, behavior: 'auto' }), 0);
+      }
+      setIsMobileOpen(false);
+      return;
+    }
+
+    // Hash links — smooth scroll if on home, otherwise let Next.js handle
     if (href.startsWith('/#')) {
       const hash = href.slice(1); // e.g. "#skills"
       if (pathname === '/') {
@@ -35,7 +48,6 @@ export default function Navbar() {
         const el = document.querySelector(hash);
         if (el) el.scrollIntoView({ behavior: 'smooth', block: 'start' });
       }
-      // If on another page, let Next.js navigate to / then the hash will trigger scroll
     }
     setIsMobileOpen(false);
   };

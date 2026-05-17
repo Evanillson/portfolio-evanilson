@@ -2,9 +2,10 @@
 
 import { motion } from 'framer-motion';
 import dynamic from 'next/dynamic';
+import Link from 'next/link';
 import MagneticButton from '@/components/ui/MagneticButton';
 import { userData } from '@/lib/data';
-import { ArrowDown, Download } from 'lucide-react';
+import { ArrowRight, Download } from 'lucide-react';
 
 const ParticleField = dynamic(
   () => import('@/components/three/ParticleField'),
@@ -125,8 +126,9 @@ export default function Hero() {
           className="flex flex-col sm:flex-row items-center justify-center gap-4"
         >
           <MagneticButton as="div" strength={0.3}>
-            <a
+            <Link
               href="/projetos"
+              scroll
               className="group relative inline-flex items-center gap-2 px-8 py-4 rounded-full text-sm font-semibold overflow-hidden transition-all duration-300"
               style={{
                 background: 'var(--accent-primary)',
@@ -135,7 +137,7 @@ export default function Hero() {
               aria-label="Explorar projetos"
             >
               <span className="relative z-10">Explorar Projetos</span>
-              <ArrowDown size={16} className="relative z-10 group-hover:translate-y-0.5 transition-transform" />
+              <ArrowRight size={16} className="relative z-10 group-hover:translate-x-0.5 transition-transform" />
               {/* Glow effect */}
               <span
                 className="absolute inset-0 opacity-0 group-hover:opacity-100 transition-opacity duration-500"
@@ -144,7 +146,7 @@ export default function Hero() {
                   filter: 'blur(20px)',
                 }}
               />
-            </a>
+            </Link>
           </MagneticButton>
 
           <MagneticButton as="div" strength={0.3}>

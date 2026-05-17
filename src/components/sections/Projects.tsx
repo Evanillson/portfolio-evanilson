@@ -31,11 +31,20 @@ export function ProjectCard({ project, index }: { project: Project; index: numbe
       >
         {/* Background Image Placeholder */}
         <div className="absolute inset-0 z-0 overflow-hidden rounded-2xl">
-          <Image 
-            src="/dashboard_placeholder.png" 
-            alt="Dashboard Placeholder" 
-            fill 
-            className="object-cover opacity-100 transition-opacity duration-700"
+          <Image
+            src="/dashboard_placeholder.png"
+            alt=""
+            aria-hidden="true"
+            fill
+            className="object-cover opacity-100 transition-transform duration-[1200ms] ease-out group-hover:scale-[1.04]"
+          />
+          {/* Readability gradient — bottom-up so content is always legible */}
+          <div
+            className="absolute inset-0 pointer-events-none"
+            style={{
+              background:
+                'linear-gradient(180deg, rgba(0,0,0,0.15) 0%, rgba(0,0,0,0.45) 55%, rgba(0,0,0,0.78) 100%)',
+            }}
           />
         </div>
 
@@ -44,9 +53,10 @@ export function ProjectCard({ project, index }: { project: Project; index: numbe
           {project.tags.slice(0, 3).map((tag) => (
             <span
               key={tag}
-              className="text-[10px] uppercase tracking-widest font-medium px-3 py-1 rounded-full"
+              className="text-[10px] uppercase tracking-widest font-medium px-3 py-1 rounded-full backdrop-blur-sm"
               style={{
-                border: '1px solid var(--card-border)',
+                border: '1px solid rgba(255, 255, 255, 0.25)',
+                background: 'rgba(0, 0, 0, 0.35)',
                 color: '#FFFFFF',
               }}
             >

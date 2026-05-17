@@ -6,6 +6,7 @@ const basePath = isProd ? "/portfolio-evanilson" : "";
 const nextConfig: NextConfig = {
   output: "export",
   basePath,
+  trailingSlash: true,
   images: {
     loader: "custom",
     loaderFile: "./src/lib/imageLoader.ts",
